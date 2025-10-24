@@ -47,17 +47,29 @@ pip install -U -r requirements.txt
 
 ## 📊 数据集准备
 
+### 自动下载原始数据
+
+```bash
+python datasets/download_datasets.py --dataset all --output data/raw
+```
+
+- `data/raw/dagm2007/` 会包含 `Class1`…`Class10` 等 DAGM 原始结构。
+- `data/raw/kolektorsdd/` 与 `data/raw/kolektorsdd2/` 会统一整理出 `images/` 与 `gt/` 目录。
+
+如需单独下载，可通过 `--dataset dagm2007`、`--dataset kolektorsdd` 或 `--dataset kolektorsdd2` 指定。
+
 ### DAGM2007
 ```bash
-python datasets/prepare_dagm.py --root /path/to/DAGM --out yolo_dagm
+python datasets/prepare_dagm.py --root data/raw/dagm2007 --out yolo_dagm
 ```
 - 自动搜索类别文件夹（Class1..ClassN）及其中的 Train/Test/Images 等子目录。  
 - 若存在掩码文件（如 `*_mask.png`），会自动转为 YOLO 格式的边界框。  
 
 ### KolektorSDD/SDD2
 ```bash
-python datasets/prepare_kolektor.py --root /path/to/Kolektor --out yolo_kolektor
+python datasets/prepare_kolektor.py --root data/raw/kolektorsdd --out yolo_kolektor
 ```
+- 若需使用 KolektorSDD2，可将 `--root` 指向 `data/raw/kolektorsdd2`。
 - 需包含 `images/` 与 `gt/`（或 `masks/`）文件夹。  
 - 掩码将自动转换为检测框并写入标签文件。  
 
