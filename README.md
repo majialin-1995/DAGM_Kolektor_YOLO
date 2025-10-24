@@ -32,29 +32,6 @@
 
 ---
 
-## 📂 目录结构
-
-```
-.
-├── datasets/
-│   ├── prepare_dagm.py          # DAGM 数据集转换为 YOLO 格式
-│   └── prepare_kolektor.py      # KolektorSDD/SDD2 数据集转换为 YOLO 格式
-├── models/
-│   └── yolov8n_p2_se.yaml       # 含 P2 检测头 + C2f-SElite 模块的 YOLOv8n
-├── modules/
-│   └── se_layers.py             # SELite 与 C2f_SELite 模块定义
-├── callbacks/
-│   ├── preproc_srts.py          # SRTS 频域残差预处理（B1）
-│   └── npr_miner.py             # NPR 负样本回放（B2）
-├── tools/
-│   └── run_yolov5.py            # 可选：运行 YOLOv5n 基线
-├── train_many.py                # 一键运行基线 + 消融实验（YOLOv8n）
-├── ablation_plan.md             # 实验列表与指标说明
-└── requirements.txt
-```
-
----
-
 ## 🧠 环境安装
 
 ```bash
