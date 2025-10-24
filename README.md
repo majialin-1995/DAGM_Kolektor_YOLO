@@ -47,19 +47,33 @@ pip install -U -r requirements.txt
 
 ## 📊 数据集准备
 
-### DAGM2007
-```bash
-python datasets/prepare_dagm.py --root /path/to/DAGM --out yolo_dagm
-```
-- 自动搜索类别文件夹（Class1..ClassN）及其中的 Train/Test/Images 等子目录。  
-- 若存在掩码文件（如 `*_mask.png`），会自动转为 YOLO 格式的边界框。  
+### 1. 下载原始数据
 
-### KolektorSDD/SDD2
+如需快速获取官方公开的数据，可使用以下脚本（支持 `--force` 覆盖及 `--url` 自定义镜像）：
+
 ```bash
-python datasets/prepare_kolektor.py --root /path/to/Kolektor --out yolo_kolektor
+# DAGM2007 原始数据
+python datasets/download_dagm.py --out data_raw/dagm
+
+# KolektorSDD（或通过 --variant sdd2 下载 KolektorSDD2）
+python datasets/download_kolektor.py --variant sdd --out data_raw/kolektor
 ```
-- 需包含 `images/` 与 `gt/`（或 `masks/`）文件夹。  
-- 掩码将自动转换为检测框并写入标签文件。  
+
+脚本会自动解压并整理目录结构，生成可直接被准备脚本识别的文件夹。
+
+### 2. 转换为 YOLO 数据格式
+
+```bash
+# DAGM2007 → YOLO
+python datasets/prepare_dagm.py --root data_raw/dagm --out yolo_dagm
+
+# Kolektor → YOLO
+python datasets/prepare_kolektor.py --root data_raw/kolektor --out yolo_kolektor
+```
+
+- 将自动搜索类别文件夹（Class1..ClassN）及其中的 Train/Test/Images 等子目录。
+- 若存在掩码文件（如 `*_mask.png`），会自动转为 YOLO 格式的边界框。
+- Kolektor 的掩码会自动转换为检测框并写入标签文件。
 
 输出结果形如：
 ```
