@@ -58,7 +58,7 @@ pip install -U -r requirements.txt
 
 ```bash
 # DAGM2007 → YOLO
-python datasets/prepare_dagm.py --root data_raw/dagm --out yolo_dagm
+python datasets/prepare_dagm.py --root data_raw/DAGM_KaggleUpload --out yolo_dagm
 ```
 
 - 将自动搜索类别文件夹（Class1..ClassN）及其中的 Train/Test/Images 等子目录。
@@ -84,7 +84,7 @@ yolo detect train \
   data=yolo_dagm/data.yaml \
   project=runs_baseline \
   name=B0_yolov8n \
-  epochs=150 imgsz=640 batch=16 device=0
+  epochs=150 imgsz=640 batch=4 device=0
 ```
 
 上面的命令将基于官方 `yolov8n.pt` 权重启动一次 **B0 基线实验**，输出结果存放在 `runs_baseline/B0_yolov8n/`。
