@@ -74,20 +74,82 @@ yolo_dagm/
 
 ---
 
-## ⚙️ 快速开始（YOLOv8n 训练与消融）
+## ⚙️ 快速开始
+
+### 单次基线训练
 
 ```bash
-python train_many.py --data yolo_dagm/data.yaml --project runs_dagm --epochs 150 --imgsz 640
+yolo detect train \
+  model=yolov8n.pt \
+  data=yolo_dagm/data.yaml \
+  project=runs_baseline \
+  name=B0_yolov8n \
+  epochs=150 imgsz=640 batch=16 device=0
 ```
 
-运行流程：
-1. **B0**：YOLOv8n 官方基线
-2. **A1**：加入 P2 检测头
-3. **A1+A2**：加入 P2 + C2f-SElite
-4. **A1+A2+B1**：加入 SRTS 增强
-5. **A1+A2+B1+B2**：加入 SRTS + NPR
+上面的命令将基于官方 `yolov8n.pt` 权重启动一次 **B0 基线实验**，输出结果存放在 `runs_baseline/B0_yolov8n/`。
 
-结果保存在 `runs_*` 文件夹中，可比较 mAP@0.5 / mAP@0.5:0.95 / Recall / Params / FPS 等指标。
+---
+
+## 🧪 实验运行指南（2 组 × 4 个子实验）
+
+以下脚本均在仓库根目录执行，可直接复制粘贴到终端。可按需修改 `epochs`、`imgsz`、`batch`、`device` 等参数。
+
+### A 组 · 结构创新（Baseline + P2 + SELite + P2&SELite）
+
+```bash
+python - <<'PY'
+from train_many import train_once, THIS
+
+common = dict(data="yolo_dagm/data.yaml", project="runs_groupA", imgsz=640, epochs=150, batch=16, device=0)
+
+# 1. 基线（B0）
+train_once("yolov8n.pt", name="A0_Baseline", **common)
+
+# 2. 仅加 P2 检测头（A1）
+train_once(str(THIS / "models" / "yolov8n_p2_only.yaml"), name="A1_P2only", **common)
+
+# 3. 仅加 C2f-SElite 注意力（A2）
+train_once(str(THIS / "models" / "yolov8n_se_only.yaml"), name="A2_SELite", **common)
+
+# 4. 同时加 P2 + C2f-SElite（A1+A2）
+train_once(str(THIS / "models" / "yolov8n_p2_se.yaml"), name="A12_P2_SELite", **common)
+PY
+```
+
+运行结束后，可在 `runs_groupA/` 中找到四个子实验的日志与权重，用以对比结构改进带来的增益。
+
+### B 组 · 数据与优化（A12 基线 + SRTS + NPR + SRTS&NPR）
+
+```bash
+python - <<'PY'
+from train_many import train_once, THIS
+from callbacks.preproc_srts import UltralyticsSRTSCallback
+from callbacks.npr_miner import UltralyticsNPRCallback
+
+common = dict(data="yolo_dagm/data.yaml", project="runs_groupB", imgsz=640, epochs=150, batch=16, device=0)
+base_model = str(THIS / "models" / "yolov8n_p2_se.yaml")
+
+# 1. A12 结构作为组内基线
+train_once(base_model, name="B0_A12_Baseline", **common)
+
+# 2. 仅加 SRTS 频域抑制（B1）
+train_once(base_model, name="B1_SRTS", callbacks=[UltralyticsSRTSCallback(prob=0.5, sigma=2.5, alpha=0.65)], **common)
+
+# 3. 仅加 NPR 难负样本回放（B2）
+train_once(base_model, name="B2_NPR", callbacks=[UltralyticsNPRCallback(prob=0.5, patch_size=128)], **common)
+
+# 4. 同时加 SRTS + NPR（B1+B2）
+train_once(base_model, name="B12_SRTS_NPR", callbacks=[
+    UltralyticsSRTSCallback(prob=0.5, sigma=2.5, alpha=0.65),
+    UltralyticsNPRCallback(prob=0.5, patch_size=128)
+], **common)
+PY
+```
+
+四个结果会保存在 `runs_groupB/` 中，建议重点比较 mAP、Precision、Recall 与收敛速度。
+
+> 如果希望一次性跑完所有组合，也可以继续使用 `python train_many.py --data yolo_dagm/data.yaml --project runs_dagm --epochs 150 --imgsz 640`，脚本会按照 B0→A1→A1+A2→A1+A2+B1→A1+A2+B1+B2 的顺序自动执行。
 
 ---
 
