@@ -6,6 +6,7 @@ import argparse
 import csv
 import logging
 import math
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Iterable, Sequence
@@ -15,6 +16,10 @@ import numpy as np
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from callbacks.npr_miner import UltralyticsNPRCallback
 from callbacks.preproc_srts import UltralyticsSRTSCallback
