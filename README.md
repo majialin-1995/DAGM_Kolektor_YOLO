@@ -93,63 +93,53 @@ yolo detect train \
 
 ## 🧪 实验运行指南（2 组 × 4 个子实验）
 
-以下脚本均在仓库根目录执行，可直接复制粘贴到终端。可按需修改 `epochs`、`imgsz`、`batch`、`device` 等参数。
+### ✅ 推荐：一键串行运行八组实验
 
-### A 组 · 结构创新（Baseline + P2 + SELite + P2&SELite）
-
-```bash
-python - <<'PY'
-from train_many import train_once, THIS
-
-common = dict(data="yolo_dagm/data.yaml", project="runs_groupA", imgsz=640, epochs=150, batch=16, device=0)
-
-# 1. 基线（B0）
-train_once("yolov8n.pt", name="A0_Baseline", **common)
-
-# 2. 仅加 P2 检测头（A1）
-train_once(str(THIS / "models" / "yolov8n_p2_only.yaml"), name="A1_P2only", **common)
-
-# 3. 仅加 C2f-SElite 注意力（A2）
-train_once(str(THIS / "models" / "yolov8n_se_only.yaml"), name="A2_SELite", **common)
-
-# 4. 同时加 P2 + C2f-SElite（A1+A2）
-train_once(str(THIS / "models" / "yolov8n_p2_se.yaml"), name="A12_P2_SELite", **common)
-PY
-```
-
-运行结束后，可在 `runs_groupA/` 中找到四个子实验的日志与权重，用以对比结构改进带来的增益。
-
-### B 组 · 数据与优化（A12 基线 + SRTS + NPR + SRTS&NPR）
+仓库提供了 `tools/run_ablation_suite.sh`，可自动依次调用八个实验（A 组 + B 组），并在每次训练结束后导出 `results.csv`、曲线图（PNG/PDF/SVG）以及最终指标对比表。
 
 ```bash
-python - <<'PY'
-from train_many import train_once, THIS
-from callbacks.preproc_srts import UltralyticsSRTSCallback
-from callbacks.npr_miner import UltralyticsNPRCallback
-
-common = dict(data="yolo_dagm/data.yaml", project="runs_groupB", imgsz=640, epochs=150, batch=16, device=0)
-base_model = str(THIS / "models" / "yolov8n_p2_se.yaml")
-
-# 1. A12 结构作为组内基线
-train_once(base_model, name="B0_A12_Baseline", **common)
-
-# 2. 仅加 SRTS 频域抑制（B1）
-train_once(base_model, name="B1_SRTS", callbacks=[UltralyticsSRTSCallback(prob=0.5, sigma=2.5, alpha=0.65)], **common)
-
-# 3. 仅加 NPR 难负样本回放（B2）
-train_once(base_model, name="B2_NPR", callbacks=[UltralyticsNPRCallback(prob=0.5, patch_size=128)], **common)
-
-# 4. 同时加 SRTS + NPR（B1+B2）
-train_once(base_model, name="B12_SRTS_NPR", callbacks=[
-    UltralyticsSRTSCallback(prob=0.5, sigma=2.5, alpha=0.65),
-    UltralyticsNPRCallback(prob=0.5, patch_size=128)
-], **common)
-PY
+bash tools/run_ablation_suite.sh \
+  --data yolo_dagm/data.yaml \
+  --project runs_ablation \
+  --epochs 150 \
+  --imgsz 640 \
+  --batch 4 \
+  --device 0
 ```
 
-四个结果会保存在 `runs_groupB/` 中，建议重点比较 mAP、Precision、Recall 与收敛速度。
+> 小贴士：
+> * 默认会针对每个实验生成单独的 `*_summary.csv` 和曲线，可通过 `--summary-name` 自定义汇总文件名。
+> * 如已存在完整的 `results.csv`，可加上 `--skip-existing` 跳过重复训练，直接复用旧结果。
+> * 所有参数（batch、imgsz、device 等）均可覆盖，脚本内部会调用 `tools/run_ablation_suite.py` 处理细节。
 
-> 如果希望一次性跑完所有组合，也可以继续使用 `python train_many.py --data yolo_dagm/data.yaml --project runs_dagm --epochs 150 --imgsz 640`，脚本会按照 B0→A1→A1+A2→A1+A2+B1→A1+A2+B1+B2 的顺序自动执行。
+### 🧰 进阶：直接调用 Python 管理脚本
+
+若希望对单个实验做微调，可直接执行 Python 版本：
+
+```bash
+python tools/run_ablation_suite.py \
+  --data yolo_dagm/data.yaml \
+  --project runs_ablation \
+  --experiments B1_SRTS B2_NPR \
+  --epochs 200 \
+  --batch 8
+```
+
+`--experiments` 支持一次指定一个或多个实验名称（A0_Baseline、A1_P2only 等），会按顺序执行并生成与 Shell 版本一致的日志、权重、曲线和汇总表格。
+
+### 📦 `train_many.py` 是做什么的？
+
+`train_many.py` 是项目最早用于跑批量实验的脚本，会按固定顺序（基线 → P2 → P2+SElite → +SRTS → +SRTS+NPR）依次启动训练。虽然功能相对简单（不带汇总图表），但仍然适合在纯 Python 环境下快速复现实验流程：
+
+```bash
+python train_many.py \
+  --data yolo_dagm/data.yaml \
+  --project runs_sequence \
+  --epochs 150 \
+  --imgsz 640
+```
+
+运行完毕后，可在 `runs_sequence/` 中看到五个子实验的输出目录。
 
 ---
 
