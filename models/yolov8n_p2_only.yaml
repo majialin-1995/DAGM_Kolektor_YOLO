@@ -2,6 +2,8 @@
 # This variant mirrors the official YOLOv8-P2 topology without SELite blocks,
 # keeping the original C2f modules throughout the head.
 
+nc: 10  # number of classes for the DAGM dataset
+
 backbone:
   # [from, repeats, module, args]
   - [-1, 1, Conv, [64, 3, 2]]

@@ -1,18 +1,16 @@
-{
-  "path": "/home/mdd/codes/DI/yolo_dagm",
-  "train": "images/train",
-  "val": "images/val",
-  "test": "images/test",
-  "names": [
-    "Class1",
-    "Class10",
-    "Class2",
-    "Class3",
-    "Class4",
-    "Class5",
-    "Class6",
-    "Class7",
-    "Class8",
-    "Class9"
-  ]
-}
+path: yolo_dagm
+train: images/train
+val: images/val
+test: images/test
+nc: 10
+names:
+  - Class1
+  - Class10
+  - Class2
+  - Class3
+  - Class4
+  - Class5
+  - Class6
+  - Class7
+  - Class8
+  - Class9
