@@ -2,6 +2,12 @@
 # This variant mirrors the official YOLOv8-P2 topology without SELite blocks,
 # keeping the original C2f modules throughout the head.
 
+nc: 80  # number of classes (overridden by the dataset YAML during training)
+scales:  # model compound scaling constants retained for compatibility with Ultralytics parsers
+  n: [0.33, 0.25, 1024]
+depth_multiple: 1.0
+width_multiple: 1.0
+
 backbone:
   # [from, repeats, module, args]
   - [-1, 1, Conv, [64, 3, 2]]
