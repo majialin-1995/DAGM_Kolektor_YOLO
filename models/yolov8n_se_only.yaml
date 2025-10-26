@@ -1,6 +1,8 @@
 # Ultralytics YOLOv8n model with SELite attention in the neck blocks
 # The detection head stays at the default three-scale (P3-P5) layout.
 
+nc: 10  # number of classes for the DAGM dataset
+
 backbone:
   - [-1, 1, Conv, [64, 3, 2]]
   - [-1, 1, Conv, [128, 3, 2]]
