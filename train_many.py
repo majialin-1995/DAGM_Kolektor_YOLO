@@ -8,6 +8,10 @@ from typing import Iterable, Sequence
 
 from ultralytics import YOLO
 
+from yolo_dagm.selite_registry import register_selite_modules
+
+register_selite_modules()
+
 from callbacks.npr_miner import UltralyticsNPRCallback
 from callbacks.preproc_srts import UltralyticsSRTSCallback
 
