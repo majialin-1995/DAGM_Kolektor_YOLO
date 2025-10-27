@@ -7,9 +7,15 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 from ultralytics import YOLO
+from ultralytics.nn import tasks as yolo_tasks
 
 from callbacks.npr_miner import UltralyticsNPRCallback
 from callbacks.preproc_srts import UltralyticsSRTSCallback
+from modules.se_layers import C2f_SELite, SELite
+
+# Register custom DAGM layers with Ultralytics so YAML configs can reference them
+yolo_tasks.C2f_SELite = C2f_SELite
+yolo_tasks.SELite = SELite
 
 THIS = Path(__file__).parent.resolve()
 
@@ -23,7 +29,7 @@ def ensure_model_variants() -> None:
     model_p2_only = model_dir / "yolov8n_p2_only.yaml"
     if model_p2_se.exists() and not model_p2_only.exists():
         text = model_p2_se.read_text()
-        model_p2_only.write_text(text.replace("modules.C2f_SELite", "C2f"))
+        model_p2_only.write_text(text.replace("C2f_SELite", "C2f"))
 
 
 def _resolve_run_dir(project: Path, name: str, before: Sequence[Path]) -> Path:
