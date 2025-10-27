@@ -119,6 +119,15 @@ def _parse_model_with_selite(d: dict[str, Any], ch: int, verbose: bool = True):
         }
     )
 
+    def _get_channels(index: int | list[int] | tuple[int, ...]) -> int:
+        """Return the channel count for a layer reference handling list inputs."""
+
+        if isinstance(index, (list, tuple)):
+            if not index:
+                raise ValueError("Layer reference list cannot be empty")
+            index = index[-1]
+        return ch_list[index]
+
     for i, (f, n, m, args) in enumerate(d["backbone"] + d["head"]):
         module_cls = _lookup_module(m)
         for j, a in enumerate(args):
@@ -131,7 +140,7 @@ def _parse_model_with_selite(d: dict[str, Any], ch: int, verbose: bool = True):
             n_ = max(round(n * depth), 1)
 
         if module_cls in base_modules:
-            c1, c2 = ch_list[f], args[0]
+            c1, c2 = _get_channels(f), args[0]
             if c2 != nc:
                 c2 = yolo_tasks.make_divisible(min(c2, max_channels) * width, 8)
             if module_cls is yolo_tasks.C2fAttn:
@@ -157,9 +166,9 @@ def _parse_model_with_selite(d: dict[str, Any], ch: int, verbose: bool = True):
                 if scale in "lx":
                     args.extend((True, 1.2))
         elif module_cls is yolo_tasks.AIFI:
-            args = [ch_list[f], *args]
+            args = [_get_channels(f), *args]
         elif module_cls in {yolo_tasks.HGStem, yolo_tasks.HGBlock}:
-            c1, cm, c2 = ch_list[f], args[0], args[1]
+            c1, cm, c2 = _get_channels(f), args[0], args[1]
             args = [c1, cm, c2, *args[2:]]
             if module_cls is yolo_tasks.HGBlock:
                 args.insert(4, n_)
@@ -167,8 +176,8 @@ def _parse_model_with_selite(d: dict[str, Any], ch: int, verbose: bool = True):
         elif module_cls is yolo_tasks.ResNetLayer:
             c2 = args[1] if args[3] else args[1] * 4
         elif module_cls is torch.nn.BatchNorm2d:
-            args = [ch_list[f]]
-            c2 = ch_list[f]
+            args = [_get_channels(f)]
+            c2 = _get_channels(f)
         elif module_cls is yolo_tasks.Concat:
             c2 = sum(ch_list[x] for x in f)
         elif module_cls in {
@@ -194,13 +203,13 @@ def _parse_model_with_selite(d: dict[str, Any], ch: int, verbose: bool = True):
                 yolo_tasks.OBB,
             }:
                 module_cls.legacy = legacy
-            c2 = ch_list[f]
+            c2 = _get_channels(f)
         elif module_cls is yolo_tasks.RTDETRDecoder:
             args.insert(1, [ch_list[x] for x in f])
-            c2 = ch_list[f]
+            c2 = _get_channels(f)
         elif module_cls is yolo_tasks.CBLinear:
             c2 = args[0]
-            c1 = ch_list[f]
+            c1 = _get_channels(f)
             args = [c1, c2, *args[1:]]
         elif module_cls is yolo_tasks.CBFuse:
             c2 = ch_list[f[-1]]
@@ -208,7 +217,7 @@ def _parse_model_with_selite(d: dict[str, Any], ch: int, verbose: bool = True):
             c2 = args[0]
             args = [*args[1:]]
         else:
-            c2 = ch_list[f]
+            c2 = _get_channels(f)
 
         module = (
             torch.nn.Sequential(*(module_cls(*args) for _ in range(n_)))
