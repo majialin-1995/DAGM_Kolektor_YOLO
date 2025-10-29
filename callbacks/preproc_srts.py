@@ -20,9 +20,16 @@ class SRTSPreproc:
 class UltralyticsSRTSCallback:
     def __init__(self, prob=0.5, sigma=2.5, alpha=0.65):
         self.t = SRTSPreproc(prob=prob, sigma=sigma, alpha=alpha)
-    def on_preprocess_batch(self, trainer):
-        batch = trainer.batch; ims = batch['img']
-        ims_np = (ims.permute(0,2,3,1).cpu().numpy()*255).astype(np.uint8)
-        for i in range(len(ims_np)): ims_np[i] = self.t(ims_np[i])
-        ims_t = torch.from_numpy(ims_np.astype(np.float32)/255.0).permute(0,3,1,2).to(ims.device)
-        batch['img'] = ims_t
+
+    def on_train_batch_start(self, trainer):
+        batch = trainer.batch
+        ims = batch["img"]
+        ims_np = (ims.permute(0, 2, 3, 1).cpu().numpy() * 255).astype(np.uint8)
+        for i in range(len(ims_np)):
+            ims_np[i] = self.t(ims_np[i])
+        ims_t = (
+            torch.from_numpy(ims_np.astype(np.float32) / 255.0)
+            .permute(0, 3, 1, 2)
+            .to(ims.device)
+        )
+        batch["img"] = ims_t
