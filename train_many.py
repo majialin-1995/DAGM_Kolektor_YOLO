@@ -67,8 +67,8 @@ def train_once(
     model = YOLO(model_def)
     if callbacks:
         for cb in callbacks:
-            if hasattr(cb, "on_preprocess_batch"):
-                model.add_callback("on_preprocess_batch", cb.on_preprocess_batch)
+            if hasattr(cb, "on_train_batch_start"):
+                model.add_callback("on_train_batch_start", cb.on_train_batch_start)
     model.train(
         data=data,
         imgsz=imgsz,
